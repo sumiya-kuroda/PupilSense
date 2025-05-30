@@ -1,0 +1,24 @@
+name: pupilsense
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python==3.11
+  - pip
+  - pip:
+    - numpy==1.26.4
+    - torch==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+    - torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+    - torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
+    - opencv-python
+    - pandas
+    - matplotlib 
+    - jupyterlab
+    - scikit-learn
+    - python-dotenv
+    - ninja
+    - snakemake
+    - snakemake-executor-plugin-slurm
+    - git+https://github.com/scikit-video/scikit-video.git # latest version of scikit-video
