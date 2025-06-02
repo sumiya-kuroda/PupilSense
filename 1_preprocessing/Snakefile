@@ -49,7 +49,7 @@ rule extract_frames:
         source /etc/profile.d/modules.sh
         module load cuda/12.4
         module load miniconda
-        source activate pupilsense
+        source activate pupilsense2
 
-        python ../pupilsense/extract_frames.py {input.mp4} -l {output.log}
+        python ../pupilsense/extract_frames.py {input.mp4} -l {output.log} -o {DEST_CEPH}
         """
