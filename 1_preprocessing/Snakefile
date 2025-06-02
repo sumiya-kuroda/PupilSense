@@ -1,0 +1,55 @@
+import os
+
+# Params
+INPUT_LIST = "eyevideo_abcd.txt"
+DEST_CEPH = "/ceph/mrsic_flogel/public/projects/SaReSuKu_20240722_HeadFixedSchemaImaging/pupil_recording/PupilSenseTraining/train"
+LOG_DIR = "/ceph/mrsic_flogel/public/projects/SaReSuKu_20240722_HeadFixedSchemaImaging/pupil_recording/PupilSenseLog"
+
+
+# Load input list from a file
+with open(INPUT_LIST) as f:
+    input_files = [line.strip() for line in f if line.strip()]
+
+def get_log_path(path):
+    return  f"{LOG_DIR}/{os.path.splitext(os.path.basename(path))[0]}.log"
+
+# Mapping 
+mp4_files = [p.replace(".avi", ".mp4") for p in input_files]
+mp4_to_avi = dict(zip(mp4_files, input_files))
+log_files = [get_log_path(p) for p in input_files]
+log_to_mp4 = dict(zip(log_files, mp4_files))
+
+# Rules
+rule all:
+    input:
+        mp4_files,
+        log_files
+
+rule convert_video:
+    input:
+        avi = lambda wildcards: mp4_to_avi.get(f"{wildcards.output}", "")
+    output:
+        mp4 =  "{output}"
+    wildcard_constraints:
+        output = ".*mp4"
+    threads: 4
+    shell:
+        "ffmpeg -i {input.avi} -y -c:v libx264 -crf 20 -preset medium {output.mp4} -hide_banner -loglevel error"
+
+rule extract_frames:
+    input:
+        mp4 = lambda wildcards: log_to_mp4.get(f"{wildcards.output}", "")
+    output:
+        log =  "{output}"
+    wildcard_constraints:
+        output = ".*log"
+    threads: 4
+    shell:
+        """
+        source /etc/profile.d/modules.sh
+        module load cuda/12.4
+        module load miniconda
+        source activate pupilsense
+
+        python ../pupilsense/extract_frames.py {input.mp4} -l {output.log}
+        """
