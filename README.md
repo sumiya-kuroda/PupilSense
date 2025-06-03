@@ -51,7 +51,7 @@ This project uses a custom dataset of eye images for training and evaluation. Th
        
 
 ### Annotations
-To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (pupil and iris). Copy/paste them into test_data.json and train_data.json as shown above.
+To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into test_data.json and train_data.json as shown above.
 
 ## 3. Inference
 This folder contains scripts to predict pupil size using the trained model saved in `models/`. `cd` to this folder and run `snakemake --profile swc-hpc/`.
@@ -75,4 +75,6 @@ The original Pupil Sense paper is below:
 ```
 
 ## Troubleshooting
-- Here is a tip.
+- detectron2 requires you to apply `frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)`.
+- How can I speed up the inference step?: Since detectron2 natively supports only one gpu for inference (or [try this](https://github.com/facebookresearch/detectron2/issues/1770)), the bottle neck is likely to be video frame I/O. Single-processed OpenCV is known to be very slow ([ref](https://github.com/vujadeyoon/Fast-Video-Processing/tree/master)). This means you want to use Python's multithreading function whenever reading frames with OpenCV. Also make sure to increase `--cpus-per-task` of SLURM's setting. `--ntasks` does not matter.
+- How can I speed up the training step?: dunno.

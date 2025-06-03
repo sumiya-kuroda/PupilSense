@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import defopt
 from pupilsense.inference.inference_pupilsense import Inference, get_center_and_radius
+from pupilsense.multithread import CapMultiThreading
 import time
 from datetime import datetime
 
@@ -18,7 +19,7 @@ def extract_pupil(input_file_location, *, invert=False):
 
     input_file_location = Path(input_file_location)
 
-    saving_file_location = Path(input_file_location).parent / 'pupil_extracted'
+    saving_file_location = Path(input_file_location).parent / 'pupil_prediction'
     saving_file_location.mkdir(parents=False, exist_ok=True)
     _saving_file_location_predicted = saving_file_location / 'predicted'
     _saving_file_location_predicted.mkdir(parents=False, exist_ok=True)
@@ -27,18 +28,23 @@ def extract_pupil(input_file_location, *, invert=False):
     
     # load eye video
     print('Loading eye video')
-    eye_video = cv2.VideoCapture()
-    eye_video.open(str(input_file_location))
+    # single CPU
+    # eye_video = cv2.VideoCapture()
+    # eye_video.open(str(input_file_location))
+    eye_video = CapMultiThreading(str(input_file_location))
     start_t = time.time()
     time_now = datetime.fromtimestamp(start_t).strftime('%Y-%m-%d %H:%M:%S')
     print(f'Starting at: {time_now}')
 
     i_frame = 0
-    num_total_frame = int(eye_video.get(cv2.CAP_PROP_FRAME_COUNT))
+    num_total_frame = int(eye_video.get_totalframe())
+    print(f'Total number of frames: {num_total_frame}')
     ellipse_output = []
-    for i_frame in range(1000):
-        eye_video.set(cv2.CAP_PROP_POS_FRAMES, i_frame)
-        _, frame = eye_video.read()
+    for i_frame in range(num_total_frame):
+        # single CPU
+        # eye_video.set(cv2.CAP_PROP_POS_FRAMES, i_frame)
+        # _, frame = eye_video.read()
+        ret, frame = eye_video.get_frame()
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
         # run prediction on video frame
@@ -48,9 +54,10 @@ def extract_pupil(input_file_location, *, invert=False):
 
         if len(boxes) <= 0:
             ellipse_output.append([np.nan, np.nan, np.nan,np.nan, np.nan, np.nan])
+            print(f"Processed Frame {i_frame}: No pupil detected")
             continue
 
-        if i_frame % 100 == 0:
+        if i_frame % 10000 == 0:
             cv2.imwrite(str(saving_file_location / f'{i_frame}.jpg'), frame)
             PSInference.save_frame(output, 
                                     frame, 
@@ -76,8 +83,10 @@ def extract_pupil(input_file_location, *, invert=False):
 
     # write dict as csv using pd.dataframe
     pupil_est_df = pd.DataFrame(np.array(ellipse_output), columns=['frame_num','radius','height','xc','yc','score'])
-    pupil_est_df.to_pickle(saving_file_location / 'eye.p')
-    print(f'total time taken: {round((time.time()-start_t)/60,2)} mins')
+    pupil_est_df.to_pickle(saving_file_location / 'pupil_sense_output.p')
+    print(f'total time taken: {round((time.time()-start_t),2)} sec')
+    print(f'average FPS: {round(num_total_frame/(time.time()-start_t), 2)}')
+
 
 if __name__ == "__main__":
     defopt.run(extract_pupil)
