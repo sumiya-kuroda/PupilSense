@@ -175,4 +175,10 @@ cython_debug/
 # VS Code
 .vscode
 
+# PupilSense
+models*/
+dataset/
+*.txt
+
+# Snakemake
 .snakemake/

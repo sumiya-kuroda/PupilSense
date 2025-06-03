@@ -3,9 +3,10 @@ import cv2
 import numpy as np
 import pandas as pd
 import time
-from tqdm import tqdm
 import defopt
 from pupilsense.inference.inference_pupilsense import Inference, get_center_and_radius
+import time
+from datetime import datetime
 
 def extract_pupil(input_file_location, *, invert=False):
     """Extract pupils
@@ -28,12 +29,14 @@ def extract_pupil(input_file_location, *, invert=False):
     print('Loading eye video')
     eye_video = cv2.VideoCapture()
     eye_video.open(str(input_file_location))
+    start_t = time.time()
+    time_now = datetime.fromtimestamp(start_t).strftime('%Y-%m-%d %H:%M:%S')
+    print(f'Starting at: {time_now}')
 
     i_frame = 0
     num_total_frame = int(eye_video.get(cv2.CAP_PROP_FRAME_COUNT))
     ellipse_output = []
     for i_frame in range(1000):
-    # while i_frame < num_total_frame: # while i_frame < num_total_frame:
         eye_video.set(cv2.CAP_PROP_POS_FRAMES, i_frame)
         _, frame = eye_video.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -53,32 +56,28 @@ def extract_pupil(input_file_location, *, invert=False):
                                     frame, 
                                     saving_file_location = saving_file_location / 'predicted' / f'predicted_{i_frame}.jpg')
         
-        # classes = instances.pred_classes
-        # scores = instances.scores
-
-        # instances_with_scores = [(i, score) for i, score in enumerate(scores)]
-        # instances_with_scores.sort(key=lambda x: x[1], reverse=True)
+        classes = instances.pred_classes
+        scores = instances.scores
+        instances_with_scores = [(i, score) for i, score in enumerate(scores)]
+        instances_with_scores.sort(key=lambda x: x[1], reverse=True)
         
-        # for index, score in instances_with_scores:
-        #     if classes[index] == 0:  # 0 is Pupil
-        #         pupil = boxes[index]
-        #         pupil_info = get_center_and_radius(pupil)
-        #         radius = int(pupil_info["radius"])
-        #         height = int(pupil_info["height"])
-        #         xc = int(pupil_info["xCenter"])
-        #         yc = int(pupil_info["yCenter"])
-        #         ellipse_output.append([i_frame, radius, height, xc, yc, float(score)])
-        #         break  # Only one prediction per frame
+        for index, score in instances_with_scores:
+            if float(classes[index]) == 0:  # 0 is Pupil
+                pupil = boxes[index]
+                pupil_info = get_center_and_radius(pupil)
+                radius = float(pupil_info["radius"])
+                height = float(pupil_info["height"])
+                xc = float(pupil_info["xCenter"])
+                yc = float(pupil_info["yCenter"])
+                ellipse_output.append([i_frame, radius, height, xc, yc, float(score)])
+                break  # Only one prediction per frame
 
-        score = 0
-        radius = 0
-        print(f"Processed Frame {i_frame}: radius = {radius}, score = {score}")
-        # i_frame += 1
+        print(f"Processed Frame {i_frame}: radius = {float(radius)}, score = {float(score)}")
 
     # write dict as csv using pd.dataframe
     pupil_est_df = pd.DataFrame(np.array(ellipse_output), columns=['frame_num','radius','height','xc','yc','score'])
     pupil_est_df.to_pickle(saving_file_location / 'eye.p')
-    # print(f'total time taken: {round((time.time()-time_pre)/60,2)} mins')
+    print(f'total time taken: {round((time.time()-start_t)/60,2)} mins')
 
 if __name__ == "__main__":
     defopt.run(extract_pupil)
