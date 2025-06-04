@@ -83,7 +83,7 @@ def extract_pupil(input_file_location, *, invert=False):
 
     # write dict as csv using pd.dataframe
     pupil_est_df = pd.DataFrame(np.array(ellipse_output), columns=['frame_num','radius','height','xc','yc','score'])
-    pupil_est_df.to_pickle(saving_file_location / 'pupil_sense_output.p')
+    pupil_est_df.to_pickle(saving_file_location / 'pupilsense_output.p')
     print(f'total time taken: {round((time.time()-start_t),2)} sec')
     print(f'average FPS: {round(num_total_frame/(time.time()-start_t), 2)}')
 

@@ -26,35 +26,23 @@ This folder contains scripts to compress the video from AVI to MP4 as well as to
 - `LOG_DIR` a dir to save the log files
 
 ## 2. Training
-To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `snakemake --profile swc-hpc/`.
-
-PupilSense's defult model is available from [here](https://github.com/stevenshci/PupilSense/releases/download/v1.0/models.zip). Download and unzip it into `models/`. This gives an error message `Skip loading parameter 'roi_heads.box_predictor.cls_score.weight' to the model due to incompatible shapes: (3, 1024) in the checkpoint but (2, 1024) in the model! You might want to double check if this is expected.`.
-
-
-### Dataset
-This project uses a custom dataset of eye images for training and evaluation. The dataset should be organized in the following structure:
+To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `snakemake --profile swc-hpc/`. This requires you to have/organize a custom dataset of eye images for training. The dataset should be organized in the following structure:
 
     dataset/
     ├── train/
-    │   │── image1.png
-    │   │── image2.png
+    │   │── image1.jpg
+    │   │── image2.jpg
     │   └── ...
     |
-    │── train_data.json
-    │    
-    └── test/
-    │   ├── image1.png
-    │   ├── image2.png
-    │   └── ...
-    |
-    └── test_data.json
-       
+    └── train_data.json
+
 
 ### Annotations
-To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into test_data.json and train_data.json as shown above.
+To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into train_data.json as shown above.
 
 ## 3. Inference
-This folder contains scripts to predict pupil size using the trained model saved in `models/`. `cd` to this folder and run `snakemake --profile swc-hpc/`.
+This folder contains scripts to predict pupil size using the trained model saved in `models/`. `cd` to this folder and run `snakemake --profile swc-hpc/`. Snakefile requires you to have three file/dirs beorehand:
+- `INPUT_LIST`: a text file where you save the path to your mp4 eye video
 
 
 ## Acknowledgement
