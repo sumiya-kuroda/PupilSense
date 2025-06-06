@@ -38,15 +38,21 @@ To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `
 
 This finetunes the best model you already have and it expects the following file strucure. Ask Sumiya to give you the model and save it under `models_best/`
 
-  ├── dataset/
-  │   └── ...
-  ├── models/
-  └── models_best/
-      ├── Config/
-      ├── metrics.json
-      └── model_final.pth
+    ├── dataset/
+    │   └── ...
+    ├── models/
+    └── models_best/
+        ├── Config/
+        ├── metrics.json
+        └── model_final.pth
 
-To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only for now i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into train_data.json as shown above.
+To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Upload images and you are asked to create a label `pupil`. Then use polygons to annotate pupils. 
+
+<img width="1750" alt="MakeSenseAI screenshot" src="https://github.com/sumiya-kuroda/PupilSense/blob/main/doc/gallery/makesense_2.PNG">
+
+Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only for now i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into train_data.json as shown above.
+
+<img width="1750" alt="MakeSenseAI screenshot" src="https://github.com/sumiya-kuroda/PupilSense/blob/main/doc/gallery/makesense_1.PNG">
 
 ## 3. Inference
 This folder contains scripts to predict pupil size using the trained model saved in `models/`. `cd` to this folder and run `snakemake --profile swc-hpc/`. Snakefile requires you to have three file/dirs beorehand:
