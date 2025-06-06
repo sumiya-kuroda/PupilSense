@@ -57,7 +57,7 @@ def extract_pupil(input_file_location, *, invert=False):
             print(f"Processed Frame {i_frame}: No pupil detected")
             continue
 
-        if i_frame % 10000 == 0:
+        if i_frame % 1000 == 0:
             cv2.imwrite(str(saving_file_location / f'{i_frame}.jpg'), frame)
             PSInference.save_frame(output, 
                                     frame, 
