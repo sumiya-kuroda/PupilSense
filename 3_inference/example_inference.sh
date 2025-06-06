@@ -18,4 +18,4 @@ module load cuda/12.4
 module load miniconda
 source activate pupilsense
 
-python -u ../pupilsense/infer_pupil.py {my_eye_camera.mp4}
+python -u ../pupilsense/infer_pupil.py /ceph/mrsic_flogel/public/projects/AtApSuKuSaRe_20250129_HFScohort2/TAA0000066/ses-018_date-20250403_protocol-t12/behav/Camera2_2025-04-03T13_13_27.mp4

@@ -35,6 +35,11 @@ class Inference:
         print('Config file: {}'.format(cfg_path))
         # Fetch the config from the given path
         cfg = get_cfg()
+        cfg.MODEL.DEVICE = self.device #configuring the device for inference
+        if self.device == 'cuda':
+            cfg.MODEL.NUM_GPUS = 1 # Hacky way to avoid error. Inference does not support multi-GPUs
+            # TODO: Remove MODEL.NUM_GPUS
+
         cfg.merge_from_file(cfg_path)
 
         if model_path is None:
