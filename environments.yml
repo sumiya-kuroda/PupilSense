@@ -21,5 +21,4 @@ dependencies:
     - ninja
     - snakemake
     - snakemake-executor-plugin-slurm
-    - git+https://github.com/scikit-video/scikit-video.git # latest version of scikit-video
     - defopt

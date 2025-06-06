@@ -26,7 +26,7 @@ This folder contains scripts to compress the video from AVI to MP4 as well as to
 - `LOG_DIR` a dir to save the log files
 
 ## 2. Training
-To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `snakemake --profile swc-hpc/`. This requires you to have/organize a custom dataset of eye images for training. The dataset should be organized in the following structure:
+To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `sbatch sbatch_train_model.sh`. This requires you to have/organize a custom dataset of eye images for training in the following structure:
 
     dataset/
     ├── train/
@@ -36,9 +36,17 @@ To fine-tune the Detectron2 model on your dataset, `cd` to this folder and run `
     |
     └── train_data.json
 
+This finetunes the best model you already have and it expects the following file strucure. Ask Sumiya to give you the model and save it under `models_best/`
 
-### Annotations
-To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into train_data.json as shown above.
+  ├── dataset/
+  │   └── ...
+  ├── models/
+  └── models_best/
+      ├── Config/
+      ├── metrics.json
+      └── model_final.pth
+
+To annotate the dataset, we recommend using [MakeSense.ai](https://www.makesense.ai/). Export these annotations in the COCO format, which should include necessary details for images, annotations, and categories (`pupil` only for now i.e., `MODEL.ROI_HEADS.NUM_CLASSES = 1`). Copy/paste them into train_data.json as shown above.
 
 ## 3. Inference
 This folder contains scripts to predict pupil size using the trained model saved in `models/`. `cd` to this folder and run `snakemake --profile swc-hpc/`. Snakefile requires you to have three file/dirs beorehand:
@@ -64,5 +72,5 @@ The original Pupil Sense paper is below:
 
 ## Troubleshooting
 - detectron2 requires you to apply `frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)`.
-- How can I speed up the inference step?: Since detectron2 natively supports only one gpu for inference (or [try this](https://github.com/facebookresearch/detectron2/issues/1770)), the bottle neck is likely to be video frame I/O. Single-processed OpenCV is known to be very slow ([ref](https://github.com/vujadeyoon/Fast-Video-Processing/tree/master)). This means you want to use Python's multithreading function whenever reading frames with OpenCV. Also make sure to increase `--cpus-per-task` of SLURM's setting. `--ntasks` does not matter.
-- How can I speed up the training step?: dunno.
+- How can I speed up the inference step?: Since detectron2 natively supports only one gpu for inference (or [implement this?](https://github.com/facebookresearch/detectron2/issues/1770)), the bottle neck is likely to be video frame I/O. Single-processed OpenCV is known to be very slow ([ref](https://github.com/vujadeyoon/Fast-Video-Processing/tree/master)). This means you want to use Python's multithreading function whenever running I/O with OpenCV. Also make sure to increase `--cpus-per-gpu` of SLURM's setting.
+- How can I speed up the training step?: https://github.com/facebookresearch/detectron2/issues/5314

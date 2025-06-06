@@ -1,9 +1,7 @@
 # Byte-compiled / optimized / DLL files
 scripts/__pycache__/
 detectron2/
-dataset/train
-dataset/test_data.json
-dataset/train_data.json
+dataset*
 notebooks
 **/.DS_Store
 
@@ -182,3 +180,6 @@ dataset/
 
 # Snakemake
 .snakemake/
+
+# SLURM
+*.out
