@@ -1,60 +1,115 @@
 import os
+from pathlib import Path
 
-# Load input list from a file
-with open(os.environ["INPUT_LIST"]) as f:
-    input_files = [line.strip() for line in f if line.strip()]
+# ------------------------------------------------------------------
+# REQUIRED ENVIRONMENT VARIABLES
+# ------------------------------------------------------------------
+INPUT_LIST      = os.environ["INPUT_LIST"]
+LOG_DIR         = os.environ["LOG_DIR"]
+DEST_CEPH       = os.environ["DEST_CEPH"]
+PUPILSENSE_PATH = os.environ["PUPILSENSE_PATH"]
 
-def get_log_path(path):
-    return f"{os.environ['LOG_DIR']}/{os.path.splitext(os.path.basename(path))[0]}.log"
+# ------------------------------------------------------------------
+# Helper to read input list
+# ------------------------------------------------------------------
+def read_input_list(path):
+    with open(path) as f:
+        return [line.strip() for line in f if line.strip()]
 
-# .avi files that need conversion
-avi_input_files = [p for p in input_files if p.endswith(".avi")]
+# Input videos (avi or mp4)
+video_files = [
+    p for p in read_input_list(INPUT_LIST)
+]
 
-# .mp4 files that are already in the right format
-mp4_input_files = [p for p in input_files if p.endswith(".mp4")]
+# Final expected output directories
+ids = []
+id_to_video = {}
+for i, v in enumerate(video_files):
+    stem = Path(v).stem
+    vid_id = f"{i:04d}_{stem}"
+    ids.append(vid_id)
+    id_to_video[vid_id] = v
 
-# Mapping 
-mp4_from_avi = [p.replace(".avi", ".mp4") for p in avi_input_files]
-mp4_to_avi = dict(zip(mp4_from_avi, avi_input_files))
-log_files = [get_log_path(p) for p in input_files]
-all_mp4_files = mp4_from_avi + mp4_input_files
-log_to_mp4 = dict(zip(log_files, all_mp4_files))
+# Our Snakemake targets: one log directory per video
+logdirs = [
+    f"{LOG_DIR}/{vid_id}_logs"
+    for vid_id in ids
+]
 
-# Rules
+# ------------------------------------------------------------------
+# TOP-LEVEL
+# ------------------------------------------------------------------
 rule all:
     input:
-        all_mp4_files,
-        log_files
+        logdirs
 
-rule convert_video:
-    input:
-        avi = lambda wildcards: mp4_to_avi.get(f"{wildcards.output}", "")
-    output:
-        mp4 =  "{output}"
-    wildcard_constraints:
-        output = ".*mp4"
-    threads: 4
-    shell:
-        "ffmpeg -i {input.avi} -y -c:v libx264 -crf 20 -preset medium {output.mp4} -hide_banner -loglevel error"
-
+# ------------------------------------------------------------------
+# MAIN RULE — extracts frames and writes timestamped logs
+# ------------------------------------------------------------------
 rule extract_frames:
+    """
+    For each video:
+      - Convert AVI → MP4 if needed (same filename, .mp4)
+      - Run pupilsense.extract_frames
+      - Write timestamped log to {video}_logs/
+    """
     input:
-        mp4 = lambda wildcards: log_to_mp4.get(f"{wildcards.output}", "")
+        video=lambda wc: id_to_video[wc.id]
     output:
-        log =  "{output}"
+        logdir=directory(LOG_DIR + "/{id}_logs")
     wildcard_constraints:
-        output = ".*log"
+        id=r".+"
     params:
-        dest = os.environ["DEST_CEPH"],
-        PUPILSENSE_PATH = os.environ["PUPILSENSE_PATH"]
+        dest=DEST_CEPH,
+        pupilsense_path=PUPILSENSE_PATH
     threads: 4
     run:
+        import sys
         import os
-        sys.path.append(params.PUPILSENSE_PATH)
+        import subprocess
+        from datetime import datetime
+        from pathlib import Path
+
+        video_path = Path(str(input.video))
+        outdir     = Path(str(output.logdir))
+
+        # Ensure directories exist
+        os.makedirs(outdir, exist_ok=True)
+        os.makedirs(params.dest, exist_ok=True)
+
+        # Make pupilsense importable
+        sys.path.append(params.pupilsense_path)
         from pupilsense.extract_frames import main
 
+        # Determine MP4 path
+        if video_path.suffix.lower() == ".mp4":
+            mp4_path = video_path
+        else:
+            mp4_path = video_path.with_suffix(".mp4")
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-i", str(video_path),
+                    "-y",
+                    "-c:v", "libx264",
+                    "-crf", "20",
+                    "-preset", "medium",
+                    str(mp4_path),
+                    "-hide_banner",
+                    "-loglevel", "error",
+                ],
+                check=True
+            )
+
+        # Create timestamped log file inside the logdir
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ts_log = outdir / f"{video_path.stem}_{timestamp}.log"
+
+        print(f"[extract_frames] Writing {ts_log}")
+
+        # Run pupilsense
         main(
-            input_file_location = input.mp4,
-            log = output.log,
-            output = params.dest
+            input_file_location=str(mp4_path),
+            log=str(ts_log),
+            output=params.dest,
         )

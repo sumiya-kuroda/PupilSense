@@ -4,6 +4,7 @@ import cv2
 from pathlib import Path 
 import math
 import defopt
+import random
 
 def main(input_file_location, *, num_training_img = 20, ext="jpg", log=None, output=None):
     """Extract frames from video file
@@ -36,18 +37,22 @@ def main(input_file_location, *, num_training_img = 20, ext="jpg", log=None, out
     n_saved = 0
     i_frame = 0
 
+    saved_fnames = []
+
     print("Extracting frames ...")
     while i_frame < num_total_frame:
         if (i_frame > 0) & (np.mod(i_frame,math.floor(num_total_frame/num_training_img)) == 0):
             cap.set(cv2.CAP_PROP_POS_FRAMES, i_frame)
             _, frame = cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            fname = "{0}_frame_{1}.{2}".format(input_file_location.stem, i_frame, ext)
+            short_id = f"{random.randint(0, 9999):04d}"  # zero-padded 4 digits
+            fname = "{0}_frame{1}_{2}.{3}".format(input_file_location.stem, i_frame, short_id, ext)
             cv2.imwrite(str(saving_file_location / fname), frame)
             if output is not None:
                 cv2.imwrite(str(Path(output) / fname), frame)
             print('Progress: {}%'.format(int((i_frame+1)/num_total_frame*100)))
             n_saved = n_saved + 1
+            saved_fnames.append(fname)
         else:
             pass
         i_frame = i_frame + 1
@@ -57,10 +62,14 @@ def main(input_file_location, *, num_training_img = 20, ext="jpg", log=None, out
 
     if log is not None:
         lines = [
+            f"Input: {str(input_file_location)}",
             f"Total number of frames found: {num_total_frame}",
             f"Total number of frames saved: {n_saved}",
             f"Total time taken : {time.time()-start_t}",
+            "Files:"
         ]
+
+        lines.extend(saved_fnames)
 
         with open(log, 'w') as f:
             for line in lines:

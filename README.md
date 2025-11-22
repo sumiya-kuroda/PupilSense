@@ -1,5 +1,5 @@
 # PupilSense
-This is the pipeline to use **PupilSense** from [PupilSense: Detection of Depressive Episodes Through Pupillary Response in the Wild](https://arxiv.org/abs/2404.14590) on SWC HPC. **PupilSense** is a deep learning-based pupillometry system. It uses eye images collected from smartphones for research in the behavior modeling domain.
+This is the pipeline to use **PupilSense** from [PupilSense: Detection of Depressive Episodes Through Pupillary Response in the Wild](https://arxiv.org/abs/2404.14590) on SWC HPC. **PupilSense** is a deep learning-based pupillometry system. It was originally desgined to use eye images collected from smartphones for research in the behavior modeling domain.
 
 <img width="1750" alt="Pupil-to-Iris Ratio (PIR) Estimation Pipeline" src="https://github.com/stevenshci/PupilSense/blob/main/static/PupilSense.png">
 
@@ -22,7 +22,7 @@ conda deactivate
 ## 1. Preprocessing
 This folder contains scripts to compress the video from AVI to MP4 as well as to extract video frames for training the model. `cd` to this folder and run `snakemake --profile swc-hpc/`. Snakefile requires you to have three file/dirs beorehand:
 - `INPUT_LIST`: a text file where you save the path to your raw eye video
-- `DEST_CEPH`: a dir where you save frames for model training
+- `DEST_CEPH`: a dir where you save frames for model training. The extracted frames have a random id of four int.
 - `LOG_DIR` a dir to save the log files
 
 ## 2. Training
